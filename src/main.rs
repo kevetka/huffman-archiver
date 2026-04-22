@@ -1,37 +1,52 @@
 use std::io;
 
+mod bitio;
 mod encoder;
+mod frequency;
 mod tree;
 
-use crate::encoder::count_frequencies;
-use crate::tree::build_huffman_tree;
+use crate::encoder::compress;
 
 fn main() -> io::Result<()> {
-    let test_filename = "test_input.txt";
-    std::fs::write(test_filename, "Lorem ipsum dolor sit amet ut deserunt culpa id sunt dolore labore ex officia. Qui pariatur eiusmod pariatur cillum ut dolore exercitation in ad elit. Ex est irure minim aliquip. Anim sint in exercitation reprehenderit cupidatat magna velit. Nostrud pariatur proident ad exercitation.")?;
+    let input_filename = "test_input.txt";
+    let output_filename = "test_compressed.huf";
 
-    println!("-- Этап 1: Подсчет частот --");
-    let frequencies = count_frequencies(test_filename).unwrap();
+    let text = "Lorem ipsum dolor sit amet ut deserunt culpa id sunt dolore labore ex officia. 
+                Qui pariatur eiusmod pariatur cillum ut dolore exercitation in ad elit. 
+                Ex est irure minim aliquip. Anim sint in exercitation reprehenderit cupidatat magna velit. 
+                Nostrud pariatur proident ad exercitation.";
 
-    for (byte, &freq) in frequencies.iter().enumerate() {
-        if freq > 0 {
-            println!("Символ '{}' ({}) в количестве {}", byte as u8 as char, byte, freq);
+    let large_text = text.repeat(100);
+
+    std::fs::write(input_filename, &large_text)?;
+    println!("Размер исходного файла: {} байт", large_text.len());
+
+    match compress(input_filename, output_filename) {
+        Ok(_) => {
+            println!("Сжатие завершено успешно");
+
+            let original_metadata = std::fs::metadata(input_filename)?;
+            let compressed_metadata = std::fs::metadata(output_filename)?;
+
+            let orig_size = original_metadata.len();
+            let comp_size = compressed_metadata.len();
+
+            println!("Исходный размер:   {} байт", orig_size);
+            println!("Размер архива:     {} байт", comp_size);
+
+            let ratio = (comp_size as f64 / orig_size as f64) * 100.0;
+            println!("Степень сжатия:    {:.2}%", ratio);
+
+            if comp_size < orig_size {
+                println!("Файл уменьшился.");
+            } else {
+                println!("Файл увеличился.");
+            }
+        }
+        Err(e) => {
+            eprintln!("Ошибка при сжатии: {}", e);
         }
     }
 
-    println!("-- Этап 2: Построение дерева Хаффмана --");
-    let root = build_huffman_tree(frequencies);
-
-    match root {
-        Some(root_node) => {
-            println!("Дерево успешно построено. Вес корня: {}", root_node.weight);
-        }
-        None => {
-            println!("Файл пуст, дерево не построено.");
-        }
-    }
-
-    std::fs::remove_file("test_input.txt").unwrap();
-    
     Ok(())
 }
