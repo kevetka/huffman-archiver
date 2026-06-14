@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::{
     cmp::Ordering,
     collections::{BinaryHeap, HashMap},
@@ -104,8 +106,8 @@ pub type CodeLengths = [u8; 256];
 /// Каждому листу сопоставляется путь от корня (false = влево, true = вправо).
 pub fn code_table_generation(root: &Node) -> CodeTable {
     let mut table = CodeTable::new();
-    generate_codes_recursive(&root, &mut Vec::new(), &mut table);
-    return table;
+    generate_codes_recursive(root, &mut Vec::new(), &mut table);
+    table
 }
 
 /// Рекурсивная часть `code_table_generation`.
@@ -157,9 +159,12 @@ fn calculate_lengths_recursive(node: &Node, current_depth: u8, lengths: &mut Cod
 /// последовательно: для каждой длины код сдвигается и инкрементируется.
 /// Возвращает `None` при нарушении неравенства Крафта или длине ≥ 128.
 pub fn build_canonical_codes(lengths: &CodeLengths) -> Option<CodeTable> {
-    let mut symbols: Vec<(u8, u8)> = lengths.iter()
-        .enumerate().filter(|&(_, &len)| len > 0)
-        .map(|(idx, &len)| (idx as u8, len)).collect();
+    let mut symbols: Vec<(u8, u8)> = lengths
+        .iter()
+        .enumerate()
+        .filter(|&(_, &len)| len > 0)
+        .map(|(idx, &len)| (idx as u8, len))
+        .collect();
 
     symbols.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
 
@@ -175,9 +180,7 @@ pub fn build_canonical_codes(lengths: &CodeLengths) -> Option<CodeTable> {
         if code >= (1u128 << len) {
             return None;
         }
-        let bits: Vec<bool> = (0..len).rev()
-            .map(|i| (code >> i) & 1 != 0)
-            .collect();
+        let bits: Vec<bool> = (0..len).rev().map(|i| (code >> i) & 1 != 0).collect();
         table.insert(symbol, bits);
         code += 1;
         prev_len = len;
@@ -205,7 +208,11 @@ pub fn build_tree_from_lengths(lengths: &CodeLengths) -> Option<Box<Node>> {
     for (&symbol, bits) in &codes {
         let mut current = &mut root;
         for &bit in bits {
-            let child = if !bit { &mut current.left } else { &mut current.right };
+            let child = if !bit {
+                &mut current.left
+            } else {
+                &mut current.right
+            };
             if child.is_none() {
                 *child = Some(Box::new(Node {
                     weight: 0,
@@ -332,7 +339,9 @@ mod tests {
 
         for (_, code1) in &codes {
             for (_, code2) in &codes {
-                if code1 == code2 { continue; }
+                if code1 == code2 {
+                    continue;
+                }
                 let min_len = code1.len().min(code2.len());
                 if &code1[..min_len] == &code2[..min_len] {
                     assert_eq!(code1.len(), code2.len(), "prefix violation");
@@ -348,7 +357,10 @@ mod tests {
         lengths[1] = 1;
         lengths[2] = 1;
         let tree = build_tree_from_lengths(&lengths);
-        assert!(tree.is_none(), "build_tree_from_lengths should reject Kraft violation");
+        assert!(
+            tree.is_none(),
+            "build_tree_from_lengths should reject Kraft violation"
+        );
         let codes = build_canonical_codes(&lengths);
         assert!(codes.is_none());
     }

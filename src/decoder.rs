@@ -1,12 +1,11 @@
+// SPDX-License-Identifier: MIT
+
 use std::{
     fs::File,
     io::{self, BufWriter, Write},
 };
 
-use crate::{
-    bitio::BitReader,
-    tree::build_tree_from_lengths,
-};
+use crate::{bitio::BitReader, tree::build_tree_from_lengths};
 
 /// Распаковывает файл, сжатый `compress`.
 ///
@@ -28,8 +27,8 @@ pub fn decompress(input_path: &str, output_path: &str) -> io::Result<()> {
     let file_size = u64::from_be_bytes(size_bytes);
 
     let mut code_lengths = [0u8; 256];
-    for i in 0..256 {
-        code_lengths[i] = reader.read_byte()?.ok_or(io::Error::new(
+    for byte in code_lengths.iter_mut() {
+        *byte = reader.read_byte()?.ok_or(io::Error::new(
             io::ErrorKind::UnexpectedEof,
             "Unexpected EOF while reading code lengths",
         ))?;
@@ -84,74 +83,81 @@ mod tests {
 
     use crate::decoder::decompress;
     use crate::encoder::compress;
+    use crate::test_path;
 
     #[test]
     fn decompress_from_known_compress() {
-        let input = "/tmp/dec_known_in.txt";
-        let comp = "/tmp/dec_known.huf";
-        let decomp = "/tmp/dec_known_out.txt";
+        let input = test_path("dec_known_in.txt");
+        let comp = test_path("dec_known.huf");
+        let decomp = test_path("dec_known_out.txt");
 
         let data = b"Known data for decoder test";
-        fs::write(input, data).unwrap();
-        compress(input, comp).unwrap();
-        decompress(comp, decomp).unwrap();
+        fs::write(&input, data).unwrap();
+        compress(&input, &comp).unwrap();
+        decompress(&comp, &decomp).unwrap();
 
         assert_eq!(fs::read(decomp).unwrap(), data);
     }
 
     #[test]
     fn decompress_invalid_file() {
-        let comp = "/tmp/dec_bad.huf";
-        let decomp = "/tmp/dec_bad_out.txt";
-        fs::write(comp, b"not a valid huffman file").unwrap();
-        assert!(decompress(comp, decomp).is_err());
+        let comp = test_path("dec_bad.huf");
+        let decomp = test_path("dec_bad_out.txt");
+        fs::write(&comp, b"not a valid huffman file").unwrap();
+        assert!(decompress(&comp, &decomp).is_err());
     }
 
     #[test]
     fn decompress_empty_compressed() {
-        let comp = "/tmp/dec_empty.huf";
-        let decomp = "/tmp/dec_empty_out.txt";
-        fs::write(comp, b"").unwrap();
-        assert!(decompress(comp, decomp).is_err());
+        let comp = test_path("dec_empty.huf");
+        let decomp = test_path("dec_empty_out.txt");
+        fs::write(&comp, b"").unwrap();
+        assert!(decompress(&comp, &decomp).is_err());
     }
 
     #[test]
     fn decompress_truncated_payload() {
-        let input = "/tmp/dec_trunc_in.txt";
-        let comp = "/tmp/dec_trunc_comp.huf";
-        let truncated = "/tmp/dec_trunc_cut.huf";
-        let decomp = "/tmp/dec_trunc_out.txt";
+        let input = test_path("dec_trunc_in.txt");
+        let comp = test_path("dec_trunc_comp.huf");
+        let truncated = test_path("dec_trunc_cut.huf");
+        let decomp = test_path("dec_trunc_out.txt");
 
         let data = b"This is a test file with enough data to have meaningful compressed content!";
-        fs::write(input, data).unwrap();
-        compress(input, comp).unwrap();
+        fs::write(&input, data).unwrap();
+        compress(&input, &comp).unwrap();
 
         let compressed = fs::read(comp).unwrap();
         let header_size = 8 + 256;
-        assert!(compressed.len() > header_size + 1,
-                "compressed file must have data beyond header");
+        assert!(
+            compressed.len() > header_size + 1,
+            "compressed file must have data beyond header"
+        );
         fs::write(&truncated, &compressed[..header_size + 1]).unwrap();
 
-        assert!(decompress(&truncated, decomp).is_err(),
-                "truncated payload should fail");
+        assert!(
+            decompress(&truncated, &decomp).is_err(),
+            "truncated payload should fail"
+        );
     }
 
     #[test]
     fn decompress_header_only() {
-        let input = "/tmp/dec_head_only_in.txt";
-        let comp = "/tmp/dec_head_only_comp.huf";
-        let truncated = "/tmp/dec_head_only_cut.huf";
-        let decomp = "/tmp/dec_head_only_out.txt";
+        let input = test_path("dec_head_only_in.txt");
+        let comp = test_path("dec_head_only_comp.huf");
+        let truncated = test_path("dec_head_only_cut.huf");
+        let decomp = test_path("dec_head_only_out.txt");
 
         let data = b"Some data for header-only truncation test";
-        fs::write(input, data).unwrap();
-        compress(input, comp).unwrap();
+        fs::write(&input, data).unwrap();
+        compress(&input, &comp).unwrap();
 
         let compressed = fs::read(comp).unwrap();
         let header_size = 8 + 256;
         fs::write(&truncated, &compressed[..header_size.min(compressed.len())]).unwrap();
 
-        assert!(decompress(&truncated, decomp).is_err(),
-                "header-only file should fail");
+        assert!(
+            decompress(&truncated, &decomp).is_err(),
+            "header-only file should fail"
+        );
     }
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::{
     fs::{File, metadata},
     io::{self, BufReader, Read},
@@ -6,7 +8,7 @@ use std::{
 use crate::{
     bitio::BitWriter,
     frequency,
-    tree::{build_huffman_tree, get_code_lengths, build_canonical_codes},
+    tree::{build_canonical_codes, build_huffman_tree, get_code_lengths},
 };
 
 /// Сжимает файл по алгоритму Хаффмана.
@@ -81,11 +83,12 @@ mod tests {
 
     use crate::decoder::decompress;
     use crate::encoder::compress;
+    use crate::test_path;
 
     fn roundtrip(data: &[u8], name: &str) {
-        let input = format!("/tmp/enc_{}_in.txt", name);
-        let comp = format!("/tmp/enc_{}.huf", name);
-        let decomp = format!("/tmp/enc_{}_out.txt", name);
+        let input = test_path(&format!("enc_{}_in.txt", name));
+        let comp = test_path(&format!("enc_{}.huf", name));
+        let decomp = test_path(&format!("enc_{}_out.txt", name));
 
         fs::write(&input, data).unwrap();
         compress(&input, &comp).unwrap();
@@ -118,10 +121,10 @@ mod tests {
 
     #[test]
     fn roundtrip_empty_file() {
-        let input = "/tmp/enc_empty_in.txt";
-        let comp = "/tmp/enc_empty.huf";
-        fs::write(input, b"").unwrap();
-        assert!(compress(input, comp).is_err());
+        let input = test_path("enc_empty_in.txt");
+        let comp = test_path("enc_empty.huf");
+        fs::write(&input, b"").unwrap();
+        assert!(compress(&input, &comp).is_err());
     }
 
     #[test]

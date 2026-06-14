@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::{env, fs, io, process};
 
 use haffman_archiver::decoder::decompress;

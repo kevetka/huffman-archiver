@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! # Huffman Archiver
 //!
 //! Реализация архиватора на основе канонического алгоритма Хаффмана.
@@ -14,3 +16,11 @@ pub mod decoder;
 pub mod encoder;
 pub mod frequency;
 pub mod tree;
+
+/// Возвращает путь к временному файлу в системной temp-директории.
+pub fn test_path(name: &str) -> String {
+    std::env::temp_dir()
+        .join(name)
+        .to_string_lossy()
+        .to_string()
+}

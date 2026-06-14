@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::{
     fs::File,
     io::{BufReader, Read},
