@@ -1,7 +1,10 @@
 [package]
-name = "haffman-archiver"
+name = "huffman-archiver"
 version = "0.1.0"
 edition = "2024"
+description = "Консольный архиватор на основе канонического алгоритма Хаффмана"
+keywords = ["huffman", "compression", "archiver"]
+license = "MIT"
 
 [dependencies]
 

@@ -1,6 +1,7 @@
 # Huffman Archiver
 
-[![CI](https://github.com/kevetka/haffman-archiver/actions/workflows/ci.yml/badge.svg)](https://github.com/kevetka/haffman-archiver/actions/workflows/ci.yml)
+[![CI](https://github.com/kevetka/huffman-archiver/actions/workflows/ci.yml/badge.svg)](https://github.com/kevetka/huffman-archiver/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/kevetka/huffman-archiver/branch/main/graph/badge.svg)](https://codecov.io/gh/kevetka/huffman-archiver)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Консольный архиватор на основе **канонического алгоритма Хаффмана** — сжатие без потерь с фиксированным заголовком 256 байт (длины кодов для каждого из 256 возможных байт). Реализован на Rust.
@@ -38,7 +39,7 @@ cargo --version
 cargo build --release
 ```
 
-После сборки бинарник будет в `target/release/haffman-archiver`.
+После сборки бинарник будет в `target/release/huffman-archiver`.
 
 **Запуск:**
 
@@ -53,8 +54,8 @@ cargo run --release -- decompress <сжатый_файл> <выходной_фа
 Или напрямую:
 
 ```bash
-./target/release/haffman-archiver compress input.txt output.huf
-./target/release/haffman-archiver decompress output.huf restored.txt
+./target/release/huffman-archiver compress input.txt output.huf
+./target/release/huffman-archiver decompress output.huf restored.txt
 ```
 
 При сжатии выводится степень сжатия:

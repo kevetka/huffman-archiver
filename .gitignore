@@ -12,3 +12,8 @@ Thumbs.db
 
 # Temp
 bin/
+
+# Generated files
+*.pdf
+charts/
+report/

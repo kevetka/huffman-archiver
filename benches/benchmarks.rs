@@ -47,7 +47,7 @@ fn bench_compress(c: &mut Criterion) {
 
             c.bench_function(&format!("compress/{}/{}", data_type, size), |b| {
                 b.iter(|| {
-                    haffman_archiver::encoder::compress(&input, &comp).unwrap();
+                    huffman_archiver::encoder::compress(&input, &comp).unwrap();
                 })
             });
         }
@@ -65,11 +65,11 @@ fn bench_decompress(c: &mut Criterion) {
             let comp = tp(&format!("bench_decompress_{}_{}.huf", data_type, size));
             let decomp = tp(&format!("bench_decompress_{}_{}_out.txt", data_type, size));
             fs::write(&input, &data).unwrap();
-            haffman_archiver::encoder::compress(&input, &comp).unwrap();
+            huffman_archiver::encoder::compress(&input, &comp).unwrap();
 
             c.bench_function(&format!("decompress/{}/{}", data_type, size), |b| {
                 b.iter(|| {
-                    haffman_archiver::decoder::decompress(&comp, &decomp).unwrap();
+                    huffman_archiver::decoder::decompress(&comp, &decomp).unwrap();
                     let _ = fs::read(&decomp).unwrap();
                 })
             });
@@ -103,7 +103,7 @@ fn bench_compress_ratio(c: &mut Criterion) {
         let input = tp(&format!("bench_ratio_{}_{}_in.txt", name, size));
         let comp = tp(&format!("bench_ratio_{}_{}.huf", name, size));
         fs::write(&input, &data).unwrap();
-        haffman_archiver::encoder::compress(&input, &comp).unwrap();
+        huffman_archiver::encoder::compress(&input, &comp).unwrap();
 
         let orig_size = fs::metadata(&input).unwrap().len();
         let comp_size = fs::metadata(&comp).unwrap().len();

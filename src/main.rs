@@ -2,8 +2,8 @@
 
 use std::{env, fs, io, process};
 
-use haffman_archiver::decoder::decompress;
-use haffman_archiver::encoder::compress;
+use huffman_archiver::decoder::decompress;
+use huffman_archiver::encoder::compress;
 
 /// Выводит справку по использованию архиватора.
 fn print_usage() {

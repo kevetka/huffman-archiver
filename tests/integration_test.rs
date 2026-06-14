@@ -15,7 +15,7 @@ fn binary_path() -> String {
     if path.ends_with("deps") {
         path.pop();
     }
-    path.push("haffman-archiver");
+    path.push("huffman-archiver");
     path.to_str().unwrap().to_string()
 }
 
