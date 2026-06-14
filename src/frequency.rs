@@ -3,6 +3,10 @@ use std::{
     io::{BufReader, Read},
 };
 
+/// Подсчитывает частоты каждого байта (0..=255) во входном файле.
+///
+/// Читает файл блоками по 4096 байт. Гарантирует корректный подсчёт
+/// для произвольных бинарных данных.
 pub fn count_frequencies(filename: &str) -> Result<[u64; 256], std::io::Error> {
     let mut reader = BufReader::new(File::open(filename)?);
 

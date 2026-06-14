@@ -1,50 +1,49 @@
-use std::io;
+use std::{env, fs, io, process};
 
-mod bitio;
-mod encoder;
-mod frequency;
-mod tree;
+use haffman_archiver::decoder::decompress;
+use haffman_archiver::encoder::compress;
 
-use crate::encoder::compress;
+/// Выводит справку по использованию архиватора.
+fn print_usage() {
+    eprintln!("Использование:");
+    eprintln!("  compress <input> <output>   — сжать файл");
+    eprintln!("  decompress <input> <output> — распаковать файл");
+}
 
+/// Точка входа: разбирает аргументы командной строки и запускает `compress`
+/// или `decompress`.
 fn main() -> io::Result<()> {
-    let input_filename = "test_input.txt";
-    let output_filename = "test_compressed.huf";
+    let args: Vec<String> = env::args().collect();
 
-    let text = "Lorem ipsum dolor sit amet ut deserunt culpa id sunt dolore labore ex officia. 
-                Qui pariatur eiusmod pariatur cillum ut dolore exercitation in ad elit. 
-                Ex est irure minim aliquip. Anim sint in exercitation reprehenderit cupidatat magna velit. 
-                Nostrud pariatur proident ad exercitation.";
+    if args.len() != 4 {
+        print_usage();
+        process::exit(1);
+    }
 
-    let large_text = text.repeat(100);
+    let command = &args[1];
+    let input_path = &args[2];
+    let output_path = &args[3];
 
-    std::fs::write(input_filename, &large_text)?;
-    println!("Размер исходного файла: {} байт", large_text.len());
+    match command.as_str() {
+        "compress" => {
+            let orig_size = fs::metadata(input_path)?.len();
+            compress(input_path, output_path)?;
 
-    match compress(input_filename, output_filename) {
-        Ok(_) => {
-            println!("Сжатие завершено успешно");
+            let comp_size = fs::metadata(output_path)?.len();
+            let ratio = comp_size as f64 / orig_size as f64 * 100.0;
 
-            let original_metadata = std::fs::metadata(input_filename)?;
-            let compressed_metadata = std::fs::metadata(output_filename)?;
-
-            let orig_size = original_metadata.len();
-            let comp_size = compressed_metadata.len();
-
-            println!("Исходный размер:   {} байт", orig_size);
-            println!("Размер архива:     {} байт", comp_size);
-
-            let ratio = (comp_size as f64 / orig_size as f64) * 100.0;
-            println!("Степень сжатия:    {:.2}%", ratio);
-
-            if comp_size < orig_size {
-                println!("Файл уменьшился.");
-            } else {
-                println!("Файл увеличился.");
-            }
+            println!("Исходный размер: {} байт", orig_size);
+            println!("Размер архива:   {} байт", comp_size);
+            println!("Степень сжатия:  {:.2}%", ratio);
         }
-        Err(e) => {
-            eprintln!("Ошибка при сжатии: {}", e);
+        "decompress" => {
+            decompress(input_path, output_path)?;
+            println!("Распаковка завершена");
+        }
+        _ => {
+            eprintln!("Неизвестная команда: {}", command);
+            print_usage();
+            process::exit(1);
         }
     }
 

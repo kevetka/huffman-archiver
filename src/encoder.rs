@@ -1,26 +1,35 @@
 use std::{
-    collections::HashMap,
     fs::{File, metadata},
     io::{self, BufReader, Read},
 };
 
-use haffman_archiver::{
+use crate::{
     bitio::BitWriter,
-    tree::{build_huffman_tree, code_table_generation},
+    frequency,
+    tree::{build_huffman_tree, get_code_lengths, build_canonical_codes},
 };
 
-use crate::frequency;
-
+/// Сжимает файл по алгоритму Хаффмана.
+///
+/// Формат архива:
+/// - 8 байт: исходный размер файла (big-endian u64)
+/// - 256 байт: длины канонических кодов для каждого байта (0 = символ отсутствует)
+/// - битовый поток: закодированные данные (с выравнивающим паддингом)
 pub fn compress(input_path: &str, output_path: &str) -> io::Result<()> {
     let frequencies = frequency::count_frequencies(input_path)?;
 
     let file_size = metadata(input_path)?.len();
 
-    let codes = if let Some(root) = build_huffman_tree(frequencies) {
-        code_table_generation(&root)
-    } else {
-        HashMap::new()
-    };
+    let root = build_huffman_tree(frequencies).ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Empty input file",
+    ))?;
+
+    let code_lengths = get_code_lengths(&root);
+    let codes = build_canonical_codes(&code_lengths).ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Failed to build canonical codes",
+    ))?;
 
     let output_file = File::create(output_path)?;
     let mut writer = BitWriter::new(output_file);
@@ -30,11 +39,8 @@ pub fn compress(input_path: &str, output_path: &str) -> io::Result<()> {
         writer.write_byte(byte)?;
     }
 
-    for &freq in frequencies.iter() {
-        let freq_bytes = freq.to_be_bytes();
-        for &byte in &freq_bytes {
-            writer.write_byte(byte)?;
-        }
+    for &len in code_lengths.iter() {
+        writer.write_byte(len)?;
     }
 
     if file_size > 0 {
@@ -64,5 +70,79 @@ pub fn compress(input_path: &str, output_path: &str) -> io::Result<()> {
         }
     }
 
+    writer.flush()?;
+
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use crate::decoder::decompress;
+    use crate::encoder::compress;
+
+    fn roundtrip(data: &[u8], name: &str) {
+        let input = format!("/tmp/enc_{}_in.txt", name);
+        let comp = format!("/tmp/enc_{}.huf", name);
+        let decomp = format!("/tmp/enc_{}_out.txt", name);
+
+        fs::write(&input, data).unwrap();
+        compress(&input, &comp).unwrap();
+        decompress(&comp, &decomp).unwrap();
+
+        let result = fs::read(&decomp).unwrap();
+        assert_eq!(data, &result, "roundtrip mismatch for {}", name);
+    }
+
+    #[test]
+    fn roundtrip_small_text() {
+        roundtrip(b"Hello, Huffman!", "small_text");
+    }
+
+    #[test]
+    fn roundtrip_single_repeated() {
+        roundtrip(&[0xAB; 100], "single_repeated");
+    }
+
+    #[test]
+    fn roundtrip_binary() {
+        let data: Vec<u8> = (0..=255).cycle().take(512).collect();
+        roundtrip(&data, "binary");
+    }
+
+    #[test]
+    fn roundtrip_all_255() {
+        roundtrip(&[0xFF; 128], "all_255");
+    }
+
+    #[test]
+    fn roundtrip_empty_file() {
+        let input = "/tmp/enc_empty_in.txt";
+        let comp = "/tmp/enc_empty.huf";
+        fs::write(input, b"").unwrap();
+        assert!(compress(input, comp).is_err());
+    }
+
+    #[test]
+    fn roundtrip_large_random() {
+        let data: Vec<u8> = (0..10000).map(|i| (i ^ (i >> 4)) as u8).collect();
+        roundtrip(&data, "large_random");
+    }
+
+    #[test]
+    fn roundtrip_single_repeated_1000() {
+        roundtrip(&[0xAA; 1000], "single_1000");
+    }
+
+    #[test]
+    fn roundtrip_all_256_symbols() {
+        let data: Vec<u8> = (0..=255).collect();
+        roundtrip(&data, "all_256");
+    }
+
+    #[test]
+    fn roundtrip_single_byte() {
+        roundtrip(b"\x42", "single_byte");
+    }
 }
