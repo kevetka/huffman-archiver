@@ -1,1 +1,19 @@
 /target
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+bin/
+
+# Generated files
+*.pdf
+charts/
+report/
