@@ -173,7 +173,7 @@ CI (GitHub Actions) проверяет каждый push и pull request в ве
 - **test** — `cargo test --verbose`
 - **bench** — `cargo bench --no-run` (проверка компиляции бенчмарков)
 
-Матрица: `ubuntu-latest` и `windows-latest`.
+Матрица: `ubuntu-latest`, `windows-latest` и `macos-latest`.
 
 ## Используемые материалы
 
